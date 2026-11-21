@@ -1,0 +1,16 @@
+{
+  "name": "フィルム撮影手帳",
+  "short_name": "フィルム手帳",
+  "description": "フィルムカメラの装填・コマの記録と、露出計・被写界深度・光の時刻",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#151514",
+  "theme_color": "#151514",
+  "lang": "ja",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

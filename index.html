@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>フィルム撮影手帳</title>
+<meta name="theme-color" content="#151514">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 現場で片手で使う計器。短い言葉で迷わせない
+   IDEA: 旧ソ連レンジファインダーの軍艦部と、セレン露出計の針
+   PICTURE: 露出は針のメーター、記録はコンタクトシート状のフィルム
+   COLOUR+TYPE: 革張りの黒、梨地の銀、針の赤。数字は Jost で刻印風
+   LAYOUT: 黒帯の見出しとタブ、1列の計器盤、900px以上で2列 */
+:root{color-scheme:light dark;
+--bg:light-dark(#f1f0ec,#121211);--panel:light-dark(#fff,#1c1c1a);--ink:light-dark(#161615,#ecebe5);
+--mute:light-dark(#5f5e58,#a4a39b);--line:light-dark(#d8d6ce,#353430);--chrome:light-dark(#c4c2ba,#4b4a45);
+--soft:light-dark(#e7e5de,#2a2a27);--red:light-dark(#cf2a16,#ff5b3d);--body:#151514;--body-ink:#eceae4}
+:root[data-theme=light]{color-scheme:light}[hidden]{display:none!important}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Jost,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",system-ui,sans-serif;overflow-x:clip;-webkit-text-size-adjust:100%;line-break:strict}
+html{scroll-padding-top:120px}
+.top{background:var(--body);color:var(--body-ink);padding:12px max(5vw,16px) 6px;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1.3px);background-size:5px 5px}
+.top-in,.tabs-in,main{max-width:1240px;margin:auto}
+.top-in{display:flex;align-items:baseline;justify-content:space-between;gap:6px 14px;flex-wrap:wrap}
+.brand{font-weight:600;font-size:17px}
+.status{font-size:14px;color:#bdbbb3;display:flex;gap:8px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;background:#ff5b3d;flex:none}
+.tabs{position:sticky;top:0;z-index:30;background:var(--body);padding:0 max(5vw,16px)}
+.tabs-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.tabs button{appearance:none;border:0;background:none;color:#a9a79f;font:inherit;font-size:15px;min-height:48px;border-bottom:3px solid transparent;cursor:pointer;padding:0 4px}
+.tabs button[aria-current=page]{color:#fff;border-bottom-color:#ff5b3d}
+.band{padding:clamp(20px,4vw,44px) max(5vw,16px)}
+h1{font-size:clamp(28px,6vw,40px);line-height:1.1;margin:0 0 8px;text-wrap:balance;font-weight:600}
+h2{font-size:21px;line-height:1.3;margin:34px 0 12px;font-weight:600}
+h3{font-size:17px;line-height:1.35;margin:0;font-weight:600}
+p{margin:0 0 10px}
+.muted,.meta{color:var(--mute)}.meta,.small{font-size:14px}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.iso{font-size:.5em;color:var(--mute);font-weight:500;white-space:nowrap}
+.warn{color:var(--red)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.note{background:var(--soft);border-radius:10px;padding:10px 14px;font-size:15px}
+.btn{appearance:none;font:inherit;font-size:16px;color:var(--ink);background:var(--panel);border:1px solid var(--chrome);border-radius:10px;min-height:44px;padding:0 16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.2;text-align:center}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.big{min-height:64px;font-size:20px;font-weight:600;width:100%}
+.btn.sm{font-size:14px;padding:0 12px}
+.btn.danger{color:var(--red);border-color:currentColor}
+.btn.armed{background:var(--red);color:#fff;border-color:var(--red)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:active:not(:disabled){transform:translateY(1px)}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--panel);border:1px solid var(--chrome);border-radius:10px;min-height:44px;padding:8px 12px;width:100%}
+textarea{min-height:110px;font-size:14px}
+label,.lab{display:grid;gap:4px;font-size:14px;color:var(--mute)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>.btn{flex:1 1 auto}
+.g2,.g3{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.form{display:grid;gap:14px;max-width:560px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;font:inherit;font-size:15px;color:var(--ink);background:var(--panel);border:1px solid var(--chrome);border-radius:12px;min-height:44px;padding:5px 12px;cursor:pointer;text-align:left;line-height:1.3}
+.chip small{display:block;font-size:13px;color:var(--mute)}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed=true] small{color:inherit;opacity:.75}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* 記録 */
+.counter-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px;align-items:end;margin:16px 0 22px}
+.counter{line-height:1}
+.cnum{font-size:clamp(76px,18vw,128px);font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ctot{font-size:clamp(24px,5vw,36px);color:var(--mute);margin-left:6px}
+.clab{display:block;font-size:15px;color:var(--mute);margin-top:10px;line-height:1.45}
+.shoot{display:grid;gap:10px}
+.sheet{display:grid;gap:10px;background:var(--body);padding:12px;border-radius:12px}
+.strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:14px 4px;border-radius:3px;background-color:#2a2620;
+background-image:repeating-linear-gradient(90deg,#151514 0 6px,transparent 6px 12px),repeating-linear-gradient(90deg,#151514 0 6px,transparent 6px 12px);
+background-size:100% 6px,100% 6px;background-position:0 4px,0 calc(100% - 4px);background-repeat:no-repeat}
+.fr{appearance:none;aspect-ratio:3/2;border:0;border-radius:2px;background:#0c0c0b;color:#6c6a63;font:500 12px/1 Jost,sans-serif;display:flex;align-items:flex-end;padding:3px 4px}
+.fr.shot{background:linear-gradient(160deg,#eeeae0,#cdc7b8);color:#2a2824;cursor:pointer}
+.fr.next{box-shadow:inset 0 0 0 2px #ff5b3d;color:#fff}
+.frames{list-style:none;margin:0;padding:0}
+.frames li{display:grid;grid-template-columns:2em 6.6em 7.6em minmax(0,1fr);gap:8px;align-items:center;border-top:1px solid var(--line);padding:6px 0;font-size:15px}
+.fn{font-weight:600;text-align:right}
+.frames input{min-height:40px;padding:6px 10px}
+/* 露出 */
+.meter{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.mcol{display:contents}
+.gauge{order:0;position:sticky;top:48px;z-index:10;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 12px 10px;text-align:center;box-shadow:0 10px 20px -16px rgba(0,0,0,.5)}
+.ctl{order:1;display:grid;gap:20px}
+.res{order:2}
+.gauge svg{display:block;width:100%;max-width:420px;max-height:100px;margin:auto}
+@media(min-width:900px){.meter{grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:28px;align-items:start}
+.mcol{display:grid;gap:14px;position:sticky;top:64px}.gauge{position:static;padding:14px 16px 16px}.gauge svg{max-height:none}}
+.verdict{font-size:clamp(24px,5vw,34px);font-weight:600;line-height:1.15;margin:2px 0 0}
+.verdict .num{font-size:.6em;color:var(--mute);font-weight:500;margin-left:.45em}
+.lv3 .verdict{color:var(--red)}
+.z0{fill:none;stroke:var(--line);stroke-width:2}
+.zw,.zo,.zi{fill:none;stroke-width:12}.zw{stroke:var(--soft)}.zo{stroke:var(--chrome)}.zi{stroke:var(--ink)}
+.tk{stroke:var(--ink);stroke-width:1.2}.tk.mj{stroke-width:2.2}
+.tl{fill:var(--ink);font:500 15px Jost,sans-serif}
+.side{fill:var(--mute);font-size:13px}
+.nd{stroke:var(--red);stroke-width:3;stroke-linecap:round}.pv{fill:var(--red)}
+#needle{transform-origin:160px 190px;transform-box:view-box;transition:transform .55s cubic-bezier(.3,1.35,.5,1)}
+@media(prefers-reduced-motion:reduce){#needle{transition:none}}
+.sugg{list-style:none;margin:10px 0 0;padding:0}
+.sugg li{border-top:1px solid var(--line);padding:9px 0;line-height:1.5}
+.sugg b{font-weight:600;margin-right:.3em}
+.blk h3,.ctl-h{font-size:15px;color:var(--mute);font-weight:500;margin:0 0 8px}
+.ft{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.step{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;gap:6px;align-items:center}
+.step .btn{padding:0;font-size:20px}
+.step select{appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;font-weight:600;font-size:19px;font-variant-numeric:tabular-nums;padding:6px 2px}
+.step output{text-align:center;font-weight:600;font-size:19px;font-variant-numeric:tabular-nums}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--chrome);border-radius:12px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--panel);color:var(--ink);font:inherit;font-size:15px;min-height:46px;cursor:pointer;padding:0 4px;line-height:1.2}
+.seg button+button{border-left:1px solid var(--chrome)}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+input[type=range]{padding:0;border:0;background:none;accent-color:var(--red)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-size:13px;color:var(--mute);font-weight:500}
+td:last-child,th:last-child{text-align:left;white-space:normal}
+tr[data-fi]{cursor:pointer}tr.cur td{background:var(--soft);font-weight:600}tr.na td{color:var(--mute)}
+.scroll{overflow-x:auto}
+.seg.seg4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.live{position:relative;width:100%;margin:0 auto;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3}
+.live video,.live canvas{position:absolute;inset:0;width:100%;height:100%}
+.live canvas{cursor:crosshair}
+.lv-msg{position:absolute;inset:0;display:grid;place-items:center;color:#d6d4cc;font-size:15px;padding:16px;text-align:center;margin:0;pointer-events:none}
+.lvbar{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;margin:10px 0;flex-wrap:wrap}
+.lvbar b{font-size:30px;font-weight:600}
+pre{white-space:pre-wrap;word-break:break-all;font-size:12px;background:var(--soft);padding:10px;border-radius:8px;max-height:260px;overflow:auto}
+.maplink{color:var(--ink);font-size:13px;margin-left:6px}
+.gauge .ft{margin-top:8px;text-align:left}
+.ph-cv{display:block;border-radius:10px;cursor:crosshair;margin:12px 0 4px;max-width:100%}
+.rd{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;border-top:1px solid var(--line);padding:8px 0}
+.rd b{font-size:20px;font-weight:600}
+/* 道具 */
+.tools{display:grid;gap:20px}
+@media(min-width:900px){.tools{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+.tools h2{margin-top:0}
+.scale{position:relative;height:58px;margin:18px 10px 4px}
+.scale .rail,.scale .in{position:absolute;top:16px;height:12px;border-radius:6px}
+.scale .rail{left:0;right:0;background:var(--soft)}.scale .in{background:var(--ink)}
+.scale .fp{position:absolute;top:8px;width:3px;height:28px;background:var(--red);margin-left:-1.5px;border-radius:2px}
+.scale .lb{position:absolute;top:36px;font-size:13px;transform:translateX(-50%);color:var(--mute);font-variant-numeric:tabular-nums}
+.big3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 12px}
+.big3 div{border-top:2px solid var(--ink);padding-top:6px}
+.big3 b{display:block;font-size:clamp(20px,5vw,26px);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.big3 span{font-size:13px;color:var(--mute)}
+.daybar{display:flex;height:24px;border-radius:6px;overflow:hidden;margin-top:14px;position:relative}
+.daybar i{display:block;height:100%}
+.s-n{background:#23252d}.s-b{background:#4f6fa3}.s-g{background:#e3a54c}.s-d{background:#efe8d2}
+.daybar .now{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--red)}
+.axis{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums;margin-top:2px}
+.sun{list-style:none;padding:0;margin:12px 0}
+.sun li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:8px 0;border-top:1px solid var(--line);align-items:baseline}
+.sun b{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sun .k{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.ckh{font-size:15px;color:var(--mute);font-weight:500;margin:16px 0 4px}
+.check{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);color:var(--ink);font-size:16px;line-height:1.5}
+.check input{width:24px;height:24px;min-height:0;margin:0;flex:none;accent-color:var(--red)}
+/* 履歴 */
+.hlist{display:grid;gap:14px}
+.hroll{display:grid;gap:10px}
+.hr-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.tag{font-size:13px;border:1px solid currentColor;border-radius:999px;padding:1px 10px;white-space:nowrap;color:var(--mute)}
+details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cam{margin-bottom:10px}
+.cam .form{margin-top:10px}
+.set{display:grid;gap:14px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,16px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:15px;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:60;padding:16px}
+.ov .card{max-width:560px;width:100%;display:grid;gap:10px}
+@media(max-width:600px){.counter-row{grid-template-columns:minmax(0,1fr);gap:14px}.frames li{grid-template-columns:2em minmax(0,1fr) auto}.frames li input{grid-column:1/-1}.g3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.g3>:first-child{grid-column:1/-1}table{font-size:14px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in"><span class="brand">フィルム撮影手帳</span><span class="status" id="hdr"></span></div></header>
+<nav class="tabs" aria-label="画面の切り替え"><div class="tabs-in">
+<button data-v="roll">記録</button><button data-v="meter">露出</button><button data-v="tools">道具</button><button data-v="history">履歴・設定</button>
+</div></nav>
+<main>
+<section class="view" id="v-roll"></section>
+
+<section class="view" id="v-meter" hidden><div class="band">
+ <div class="meter">
+  <div class="mcol">
+   <div class="gauge" id="gauge"><div id="dial"></div><p class="verdict" id="v-main" aria-live="polite"></p>
+    <div class="ft">
+    <div><p class="ctl-h">絞り</p><div class="step"><button class="btn" data-act="f-" aria-label="開ける">‹</button><select id="m-f" aria-label="絞り"></select><button class="btn" data-act="f+" aria-label="絞る">›</button></div></div>
+    <div><p class="ctl-h">シャッター速度</p><div class="step"><button class="btn" data-act="t-" aria-label="遅くする">‹</button><select id="m-t" aria-label="シャッター速度"></select><button class="btn" data-act="t+" aria-label="速くする">›</button></div></div>
+   </div>
+   </div>
+   <div class="card res"><p id="v-sub"></p><p class="small muted" id="v-ev"></p><ul class="sugg" id="v-sugg"></ul></div>
+  </div>
+  <div class="ctl">
+   <button class="btn pri big" data-act="logshot">この露出で1枚撮った</button>
+   <div class="blk"><p class="ctl-h">明るさの決め方</p>
+    <div class="seg seg4" role="group" aria-label="明るさの決め方"><button data-src="scene">状況</button><button data-src="live">ライブ</button><button data-src="photo">写真</button><button data-src="ev">EV入力</button></div>
+   </div>
+   <div class="blk" id="p-scene"><div class="chips" id="scene-chips"></div>
+    <p class="small muted" style="margin-top:10px">晴天・曇天などの値は、日の出の約2時間後から日の入りの約2時間前までの目安です（ISO100基準のEV）。</p><p class="small" id="sun-hint"></p></div>
+   <div class="blk" id="p-live" hidden>
+    <div class="live" id="lv-box"><video id="lv" playsinline muted></video><canvas id="lv-ov" aria-label="カメラの映像。タップした点をスポット測光します"></canvas><p class="lv-msg" id="lv-msg">「カメラを起動」を押すと、ここに映像が出ます。</p></div>
+    <div class="lvbar"><b class="num" id="lv-ev">EV —</b><span class="small muted" id="lv-st"></span></div>
+    <div class="row"><button class="btn" data-act="lv-start" id="lv-startbtn">カメラを起動</button><button class="btn" data-act="lv-hold" id="lv-holdbtn" disabled>値を固定</button></div>
+    <div style="margin-top:14px"><p class="ctl-h">測る範囲</p><div class="seg" role="group" aria-label="測る範囲"><button data-lm="avg">平均</button><button data-lm="center">中央</button><button data-lm="spot">スポット</button></div><p class="small muted" style="margin-top:6px">スポットは、映像の測りたい所をタップします。</p></div>
+    <div class="g2" style="margin-top:12px"><label>スマホのレンズのF値<input id="lv-n" inputmode="decimal"></label><label>使うカメラ<select id="lv-dev"><option value="">自動（背面）</option></select></label></div>
+    <div style="margin-top:12px"><p class="ctl-h">補正（スマホの癖）</p><div class="step" style="max-width:260px"><button class="btn" data-act="lcal-" aria-label="補正を減らす">‹</button><output id="lcal-out"></output><button class="btn" data-act="lcal+" aria-label="補正を増やす">›</button></div>
+     <p class="small muted" style="margin-top:6px">晴れた日中の順光の景色でEV15前後になるか、デジカメの露出計と同じ場面で比べて合わせてください。F値はスマホの仕様表に載っています（メインカメラの値）。</p></div>
+    <details style="margin-top:8px"><summary>この端末の対応状況</summary><p class="small" id="lv-mode-txt"></p>
+     <label>測り方<select id="lv-mode"><option value="auto">自動で選ぶ</option><option value="manual">手動露出に切り替えて測る</option><option value="report">自動露出の報告値を使う</option><option value="rel">明暗差だけ</option></select></label>
+     <pre id="lv-diag">カメラを起動すると表示されます。</pre><div class="row"><button class="btn" data-act="lv-copy">対応状況をコピー</button></div></details>
+   </div>
+   <div class="blk" id="p-photo" hidden>
+    <p class="small">スマホのカメラで撮った写真を、<b>写真ライブラリから</b>選んでください。写真に記録されたF値・シャッター速度・ISOから明るさを逆算します。</p>
+    <p class="small muted">このページから直接撮影すると、iPhoneでは露出の情報が消えることがあります。</p>
+    <div class="row"><label class="btn" for="ph-in">写真を選ぶ</label></div><input id="ph-in" class="vh" type="file" accept="image/*">
+    <div id="ph-out"></div>
+    <div style="margin-top:12px"><p class="ctl-h">スマホの癖の補正（測った値に足します）</p>
+     <div class="step" style="max-width:260px"><button class="btn" data-act="cal-" aria-label="補正を減らす">‹</button><output id="cal-out"></output><button class="btn" data-act="cal+" aria-label="補正を増やす">›</button></div>
+     <p class="small muted" style="margin-top:6px">決め方の一例：晴れた日中の順光の景色を撮ってEV15前後になるか見る。デジカメ（X-T5など）の露出計と同じ場面で比べるのも手です。</p></div>
+   </div>
+   <div class="blk" id="p-ev" hidden>
+    <div class="step" style="max-width:300px"><button class="btn" data-act="ev-" aria-label="EVを下げる">‹</button><output id="ev-out"></output><button class="btn" data-act="ev+" aria-label="EVを上げる">›</button></div>
+    <p class="ctl-h" style="margin-top:16px">ほかのカメラの表示から換算</p>
+    <div class="g3"><label>F値<input id="dc-f" inputmode="decimal" value="5.6"></label><label>シャッター<input id="dc-t" value="1/250"></label><label>ISO<input id="dc-iso" inputmode="numeric" value="200"></label></div>
+    <div class="row" style="margin-top:10px"><button class="btn" data-act="dc">EVに換算してセット</button></div>
+    <p class="small muted" style="margin-top:8px">デジカメの露出計の値を、感度の違うフィルムに置き換えるときに。シャッターは「1/250」や「2秒」の形で。</p>
+   </div>
+   <div class="g2"><label>感度（ISO）<input id="m-iso" type="number" inputmode="numeric" min="1"></label><label>フィルムの種類<select id="m-type"></select></label></div>
+   <div><p class="ctl-h">補正 <output id="comp-out" class="num"></output></p><input type="range" id="m-comp" min="-9" max="9" step="1" aria-label="露出補正">
+    <p class="small muted">逆光の人物を明るく写したいときは＋1前後、夜の雰囲気を暗めに残したいときは−。</p></div>
+   <div class="g2"><label>フィルター倍数<select id="m-filt"></select></label><label>カメラ<select id="m-cam"></select></label></div>
+  </div>
+ </div>
+ <h2>同じ明るさになる組み合わせ</h2>
+ <p class="small muted">行を押すと、その絞りとシャッター速度にします。</p>
+ <div class="scroll"><table id="eq"></table></div>
+</div></section>
+
+<section class="view" id="v-tools" hidden><div class="band"><div class="tools">
+ <section class="card">
+  <h2>被写界深度</h2>
+  <div class="g3"><label>焦点距離（mm）<input id="d-fl" type="number" inputmode="decimal" min="1"></label><label>絞り<select id="d-f"></select></label><label>ピント位置（m）<input id="d-s" type="number" inputmode="decimal" step="0.1" min="0.3"></label></div>
+  <div class="chips" id="d-chips" style="margin-top:10px"></div>
+  <div class="scale" id="d-scale" aria-hidden="true"></div>
+  <div class="big3"><div><span>手前の端</span><b id="d-near"></b></div><div><span>奥の端</span><b id="d-far"></b></div><div><span>過焦点距離</span><b id="d-h"></b></div></div>
+  <p id="d-zone"></p>
+  <p class="small muted">目盛りはピントリングと同じく近いほど広く取っています（単位m）。許容錯乱円0.03mm（35mm判）で計算しているので、レンズの被写界深度目盛りとは少し違うことがあります。</p>
+ </section>
+ <section class="card">
+  <h2>光の時刻</h2>
+  <div class="g2"><label>場所<select id="s-place"></select></label><label>日付<input id="s-date" type="date"></label></div>
+  <div class="row" id="s-here" hidden style="margin-top:10px;align-items:center"><button class="btn" data-act="geo">現在地を取得</button><span class="small muted" id="s-here-st"></span></div>
+  <div class="g2" id="s-custom" hidden style="margin-top:10px"><label>緯度<input id="s-lat" inputmode="decimal"></label><label>経度<input id="s-lon" inputmode="decimal"></label></div>
+  <div class="daybar" id="s-bar"></div><div class="axis"><span>0時</span><span>6</span><span>12</span><span>18</span><span>24時</span></div>
+  <ul class="sun" id="s-list"></ul>
+  <p class="small muted">計算値です。山や建物があると、見える時刻は変わります。ゴールデンアワーは太陽高度+6°〜−4°、ブルーアワーは−4°〜−6°として計算しています（定義は人によって少し違います）。</p>
+ </section>
+ <section class="card">
+  <h2>チェックリスト</h2>
+  <p class="small muted" id="ck-scope"></p>
+  <div id="ck-list"></div>
+  <div class="row" style="margin-top:12px"><button class="btn" data-act="ck-reset">チェックを全部外す</button></div>
+ </section>
+</div></div></section>
+
+<section class="view" id="v-history" hidden><div class="band">
+ <div id="h-list"></div>
+ <h2>設定</h2>
+ <div class="set">
+  <div class="card"><h3>カメラ</h3><p class="small muted">シャッター速度は「1/2, 1/5, 1/10」のように、絞りは「2, 2.8, 4」のようにカンマ区切りで。秒単位は「2秒」と書きます。</p><div id="cams"></div><div class="row"><button class="btn" data-act="addcam">カメラを追加</button></div></div>
+  <div class="card"><h3>位置情報</h3><label class="check"><input type="checkbox" id="geo-frames"><span>「1枚撮った」ときに撮影地も記録する（記録はこの端末の中だけに残ります）</span></label></div>
+  <div class="card"><h3>保存と、ほかの端末への引っ越し</h3><p class="small" id="sync"></p>
+   <div class="row"><button class="btn" data-act="bk-file">ファイルに書き出す</button><button class="btn" data-act="bk-copy">文字列でコピー</button></div>
+   <p class="small muted" style="margin-top:8px">移す先の端末で、書き出したファイルを読み込むか、文字列を貼り付けてください。</p>
+   <div class="row"><label class="btn" for="bk-fin">ファイルを読み込む</label></div><input id="bk-fin" class="vh" type="file" accept=".json,application/json,text/plain">
+   <label style="margin-top:12px">文字列を貼り付け<textarea id="bk-in"></textarea></label>
+   <div class="row" style="margin-top:8px"><button class="btn pri" data-act="bk-merge">今の記録に足す</button><button class="btn danger" data-act="bk-restore">今の記録と置き換える</button></div>
+   <p class="small muted" style="margin-top:8px">「足す」は撮り終えたフィルムを両方残します（同じフィルムなら新しい方）。装填中のフィルムは、この端末に無いときだけ取り込みます。このページは記録をどこにも送信しません。</p></div>
+ </div>
+</div></section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+{
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const L2=Math.log2,clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),plain=o=>JSON.parse(JSON.stringify(o));
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const LS='filmnote.v1';
+const JUP=[2,2.8,4,5.6,8,11,16,22],KV=[1/2,1/5,1/10,1/25,1/50,1/125,1/250,1/500];
+const DEF_CAMS=[
+ {id:'kiev4m',name:'キエフ4M',speeds:[...KV,1/1000],fs:JUP,focal:50},
+ {id:'kiev4',name:'キエフ（初期型・最高速1/1250）',speeds:[...KV,1/1250],fs:JUP,focal:50},
+ {id:'std',name:'汎用（1段刻み）',speeds:[1,1/2,1/4,1/8,1/15,1/30,1/60,1/125,1/250,1/500,1/1000],fs:[1.4,2,2.8,4,5.6,8,11,16,22],focal:50}];
+const FILMS=[['Kodak Gold 200',200,'cn'],['Kodak UltraMax 400',400,'cn'],['Kodak ColorPlus 200',200,'cn'],['Kodak Portra 160',160,'cn'],['Kodak Portra 400',400,'cn'],['Kodak Portra 800',800,'cn'],['Kodak Ektar 100',100,'cn'],['FUJIFILM 200',200,'cn'],['FUJIFILM 400',400,'cn'],['フジカラー 100',100,'cn'],['フジカラー SUPERIA PREMIUM 400',400,'cn'],['CineStill 800T',800,'cn'],['CineStill 400D',400,'cn'],['Lomography Color Negative 400',400,'cn'],['Kodak Tri-X 400',400,'bw'],['Kodak T-MAX 100',100,'bw'],['Kodak T-MAX 400',400,'bw'],['Ilford HP5 Plus',400,'bw'],['Ilford FP4 Plus',125,'bw'],['Ilford Delta 100',100,'bw'],['Ilford Delta 400',400,'bw'],['Kentmere Pan 100',100,'bw'],['Kentmere Pan 400',400,'bw'],['Fomapan 100',100,'bw'],['Fomapan 400',400,'bw'],['FUJIFILM ACROS II',100,'bw'],['FUJIFILM Velvia 50',50,'rv'],['FUJIFILM Velvia 100',100,'rv'],['FUJIFILM PROVIA 100F',100,'rv'],['Kodak Ektachrome E100',100,'rv']];
+const TYPES={cn:'カラーネガ',bw:'モノクロネガ',rv:'リバーサル'};
+const SCENES=[{id:'snow',name:'雪・砂浜の晴天',ev:16},{id:'sun',name:'晴天（影がくっきり）',ev:15},{id:'hazy',name:'薄日（影がぼんやり）',ev:14},{id:'cloud',name:'曇天（影がない）',ev:13},{id:'heavy',name:'厚い曇り・雨',ev:12},{id:'shade',name:'晴れの日の日陰',ev:12},{id:'presun',name:'日の入りの少し前',ev:13,r:'12〜14'},{id:'sunset',name:'日の入り',ev:12},{id:'after',name:'日の入り直後',ev:10,r:'9〜11'},{id:'gallery',name:'美術館・ギャラリー',ev:9.5,r:'8〜11'},{id:'street',name:'明るい夜の繁華街',ev:8},{id:'night',name:'夜の街・ショーウィンドウ',ev:7.5,r:'7〜8'},{id:'office',name:'明るい室内・オフィス',ev:7.5,r:'7〜8'},{id:'home',name:'家の中',ev:6,r:'5〜7'}];
+const LAT={cn:{i:[-1/3,2/3],o:[-2/3,2],w:[-1,3]},bw:{i:[-1/3,2/3],o:[-2/3,1.5],w:[-1,2.5]},rv:{i:[-1/3,1/3],o:[-1/2,1/2],w:[-2/3,2/3]}};
+const FILTS=[['なし',0],['×2（+1段）',1],['×3（約+1.6段）',L2(3)],['×4（+2段）',2],['×8（+3段）',3]];
+const STATUS={shot:'撮影済み',lab:'現像に出した',dev:'現像済み',scan:'スキャン済み'};
+const PLACES={here:['現在地',null,null],sapporo:['札幌',43.06,141.35],sendai:['仙台',38.27,140.87],tokyo:['東京',35.68,139.77],nagoya:['名古屋',35.18,136.91],osaka:['大阪',34.69,135.50],fukuoka:['福岡',33.59,130.40],custom:['緯度・経度を入力',null,null]};
+const CHECKS=[['装填するとき',[['c1','直射日光を避けて装填した（日陰か、体の影で）'],['c2','フィルムの感度をこのアプリと揃えた'],['c3','巻き上げると巻き戻しノブが回る（フィルムが送られている印）'],['c4','空送りして1枚目まで進め、カウンターを合わせた']]],['撮るとき',[['c5','レンズキャップを外した（レンジファインダーはファインダーをのぞいても気づけません）'],['c6','キエフは巻き上げてからシャッター速度を変える（取扱説明書の推奨）'],['c7','二重像を重ねてピントを合わせた'],['c8','キエフでストロボを使うならシャッターは1/25以下']]],['撮り終えたら',[['c9','巻き上げが固くなったら無理に巻かない'],['c10','最後まで巻き戻してから裏蓋を開ける'],['c11','増感・減感したなら、現像に出すときに伝える']]]];
+const DIST=[1,1.5,2,3,5,10],DFS=[1.4,2,2.8,4,5.6,8,11,16,22];
+
+const fresh=()=>({v:1,mainAt:0,settings:{calib:0,place:'tokyo',lat:35.68,lon:139.77,dfl:50,df:5.6,ds:3,hereLat:null,hereLon:null,hereAcc:null,hereAt:0,lvN:1.7,lcalib:0,lvMeter:'center',lvMode:'auto',lvDev:'',geoFrames:false},cameras:plain(DEF_CAMS),active:null,checks:{},
+ exp:{src:'scene',scene:'sun',manualEv:12,photoRaw:null,photoLabel:'',liveEv:null,iso:200,type:'cn',comp:0,filt:0,camId:'kiev4m',f:16,t:1/250},rolls:{}});
+let state=fresh();
+try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s&&s.v===1){const f=fresh();state={...f,...s,settings:{...f.settings,...s.settings},exp:{...f.exp,...s.exp},rolls:s.rolls||{},cameras:s.cameras&&s.cameras.length?s.cameras:f.cameras};}}catch(e){}
+
+/* ---------- 書式 ---------- */
+const r1=x=>Math.round(x*10)/10,minus=s=>String(s).replace('-','−');
+const fmtEv=x=>minus(r1(x)%1===0?r1(x):r1(x).toFixed(1));
+const fmtF=f=>'f/'+r1(f);
+const fmtT=t=>t>=0.6?r1(t)+'秒':'1/'+Math.round(1/t);
+const fmtSec=t=>t<0.6?fmtT(t):t<60?(t<10?r1(t):Math.round(t))+'秒':r1(t/60)+'分';
+function fmtStops(x){const n=Math.round(x*3);if(!n)return '±0';const a=Math.abs(n),w=Math.floor(a/3),r=a%3;return (n>0?'+':'−')+(w||'')+(r===1?'⅓':r===2?'⅔':'')+'段';}
+const fmtAbs=x=>fmtStops(Math.abs(x)).replace(/^[+±]/,'');
+const fmtM=x=>x===Infinity?'∞':x<10?r1(x)+'m':Math.round(x)+'m';
+const pad=n=>String(n).padStart(2,'0');
+const dstr=t=>{if(!t)return '';const d=new Date(t);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`};
+const tstr=t=>{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const hm=d=>isNaN(d)?'—':`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function parseT(x){x=String(x).trim();const sec=/(秒|s|"|″)$/.test(x);x=x.replace(/(秒|s|"|″)$/,'');if(x.includes('/')){const [a,b]=x.split('/').map(Number);return a>0&&b>0?a/b:NaN}const n=parseFloat(x);return n>0?(sec?n:1/n):NaN;}
+const idxNear=(list,v)=>{let bi=0,bd=Infinity;list.forEach((x,i)=>{const d=Math.abs(L2(x)-L2(v));if(d<bd){bd=d;bi=i}});return bi};
+const camById=id=>state.cameras.find(c=>c.id===id)||state.cameras[0];
+function fixFT(){const e=state.exp,c=camById(e.camId);e.camId=c.id;e.f=c.fs[idxNear(c.fs,e.f)];e.t=c.speeds[idxNear(c.speeds,e.t)];}
+
+/* ---------- 保存（この端末のブラウザ） ---------- */
+let syncMsg='';
+function setSync(k){syncMsg={ok:'記録はこの端末のブラウザに保存しています。ほかの端末とは同期しないので、移すときは下の書き出し・読み込みを使ってください。',persist:'記録はこの端末のブラウザに保存しています（ブラウザに「消さないで」と頼んである状態です）。ほかの端末とは同期しないので、移すときは下の書き出し・読み込みを使ってください。',err:'この端末に保存できませんでした。ブラウザの空き容量や設定を確かめてください。'}[k]||syncMsg;const el=$('#sync');if(el)el.textContent=syncMsg;}
+function local(){try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){setSync('err')}}
+function touchMain(){state.mainAt=Date.now();local();}
+function touchRoll(id){const r=state.rolls[id];if(r)r.updatedAt=Date.now();local();}
+setSync('ok');
+(async()=>{try{if(navigator.storage&&navigator.storage.persist){const p=(await navigator.storage.persisted())||(await navigator.storage.persist());setSync(p?'persist':'ok');}}catch(e){}})();
+let geoLast=null;
+const getPos=(maxAge=120000)=>new Promise((res,rej)=>{if(!navigator.geolocation)return rej({code:0});navigator.geolocation.getCurrentPosition(p=>{geoLast={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};res(geoLast)},rej,{enableHighAccuracy:false,maximumAge:maxAge,timeout:12000});});
+
+/* ---------- 共通 ---------- */
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2300);}
+function arm(btn,fn,label){if(btn.dataset.armed){clearTimeout(btn._t);delete btn.dataset.armed;btn.classList.remove('armed');btn.textContent=btn._l;fn();return;}
+ btn._l=btn.textContent;btn.dataset.armed='1';btn.classList.add('armed');btn.textContent=label;btn._t=setTimeout(()=>{delete btn.dataset.armed;btn.classList.remove('armed');btn.textContent=btn._l;},3500);}
+async function copyText(s){try{await navigator.clipboard.writeText(s);toast('コピーしました');}catch(e){const o=document.createElement('div');o.className='ov';
+ o.innerHTML=`<div class="card"><h3>自動でコピーできませんでした</h3><p class="small muted">下の文字を長押しして、すべて選択してからコピーしてください。</p><textarea readonly>${esc(s)}</textarea><div class="row"><button class="btn pri" type="button">閉じる</button></div></div>`;
+ document.body.append(o);const ta=$('textarea',o);ta.focus();ta.select();o.addEventListener('click',ev=>{if(ev.target===o||ev.target.closest('button'))o.remove();});}}
+function renderHeader(){const a=state.active;$('#hdr').innerHTML=a?`<span class="dot"></span><span>${esc(a.film)}　<span class="num">${a.frames.length} / ${a.total}</span></span>`:'<span>フィルム未装填</span>';}
+
+/* ---------- 記録 ---------- */
+const frow=(fr,i,rid)=>`<li><span class="fn num">${fr.n}</span><span class="num muted">${tstr(fr.at)}</span><span class="num">${fr.f?fmtF(fr.f)+' '+fmtT(fr.t):'—'}${fr.lat!=null?`<a class="maplink" href="https://www.google.com/maps/search/?api=1&amp;query=${fr.lat},${fr.lon}" target="_blank" rel="noopener">地図</a>`:''}</span><input class="fnote" data-i="${i}"${rid?` data-rid="${rid}"`:''} value="${esc(fr.note||'')}" placeholder="メモ" aria-label="${fr.n}枚目のメモ"></li>`;
+function renderRoll(){
+ const v=$('#v-roll'),a=state.active;
+ if(!a){const lp=FILMS.find(f=>f[0]===state.settings.lastFilm)||FILMS[0];v.innerHTML=`<div class="band"><h1>フィルムを入れる</h1><p class="muted">いまカメラは空です。空シャッターはいくら切っても無料です。</p>
+  <form class="form" id="load">
+   <label>フィルム<select name="preset">${Object.entries(TYPES).map(([k,x])=>`<optgroup label="${x}">${FILMS.filter(f=>f[2]===k).map(f=>`<option value="${esc(f[0])}"${f===lp?' selected':''}>${esc(f[0])}（ISO${f[1]}）</option>`).join('')}</optgroup>`).join('')}<option value="__other">その他（名前を入力）</option></select></label>
+   <label id="film-other" hidden>フィルムの名前<input name="film" autocomplete="off" placeholder="例：期限切れの Kodak Gold 200"></label>
+   <div class="g2"><label>箱の感度（ISO）<input name="iso" type="number" inputmode="numeric" min="1" value="${lp[1]}" required></label><label>種類<select name="type">${Object.entries(TYPES).map(([k,x])=>`<option value="${k}"${k===lp[2]?' selected':''}>${x}</option>`).join('')}</select></label></div>
+   <div class="lab">枚数<div class="chips">${[12,24,27,36].map(n=>`<button type="button" class="chip" data-cnt="${n}" aria-pressed="${n===36}">${n}枚</button>`).join('')}</div><input type="hidden" name="total" value="36"></div>
+   <label>カメラ<select name="cam">${state.cameras.map(c=>`<option value="${c.id}"${c.id===state.exp.camId?' selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
+   <label>撮影に使う感度（増感・減感するときだけ変える）<input name="shoot" type="number" inputmode="numeric" min="1" value="${lp[1]}"></label>
+   <button class="btn pri big" type="submit">装填した</button>
+  </form></div>`;return;}
+ const n=a.frames.length,left=a.total-n,push=a.shoot!==a.iso?L2(a.shoot/a.iso):0,max=Math.max(a.total,n);
+ const cells=[];for(let i=1;i<=max;i++)cells.push(i<=n?`<button class="fr shot" data-act="frame" data-n="${i}" aria-label="${i}枚目のメモへ">${i}</button>`:`<span class="fr${i===n+1?' next':''}">${i}</span>`);
+ const strips=[];for(let i=0;i<cells.length;i+=6)strips.push(`<div class="strip">${cells.slice(i,i+6).join('')}</div>`);
+ const lab=left>0?`あと${left}枚`:left===0?'規定の枚数を撮りました。巻き上げが固くなったら無理せず巻き戻しを。':`規定より${-left}枚多く撮れています`;
+ v.innerHTML=`<div class="band">
+  <p class="meta">${esc(TYPES[a.type]||'')} · ${esc(a.camName||camById(a.camId).name)} · ${dstr(a.loadedAt)}に装填</p>
+  <h1>${esc(a.film)} <span class="iso">ISO${a.shoot}</span></h1>
+  ${push?`<p class="note">${push>0?'増感':'減感'}${fmtAbs(push)}で撮影中です（箱はISO${a.iso}）。現像に出すときに伝えてください。</p>`:''}
+  <div class="counter-row">
+   <div class="counter"><span class="cnum">${n}</span><span class="ctot">/ ${a.total}</span><span class="clab">${lab}</span></div>
+   <div class="shoot"><input id="nn" placeholder="次のコマのメモ（場所・被写体など、任意）" autocomplete="off" aria-label="次のコマのメモ">
+    <button class="btn pri big" data-act="shot"${n>=a.total+4?' disabled':''}>1枚撮った</button>
+    <div class="row"><button class="btn" data-act="undo"${n?'':' disabled'}>1枚戻す</button><button class="btn" data-act="finish">撮り終えた</button></div></div>
+  </div>
+  <div class="sheet">${strips.join('')}</div>
+  <h2>コマの記録</h2>
+  ${n?`<ol class="frames">${a.frames.map((f,i)=>frow(f,i)).reverse().join('')}</ol>`:'<p class="muted">まだ1枚もありません。「1枚撮った」か、露出タブの「この露出で1枚撮った」で記録されます。</p>'}
+ </div>`;
+}
+function addFrame(x){const a=state.active;if(!a)return;if(a.frames.length>=a.total+4){toast('これ以上は記録できません');return;}
+ const fr={n:a.frames.length+1,at:Date.now(),...x};a.frames.push(fr);touchMain();renderRoll();renderHeader();toast(`${a.frames.length}枚目を記録しました`);
+ if(state.settings.geoFrames)getPos().then(p=>{fr.lat=+p.lat.toFixed(5);fr.lon=+p.lon.toFixed(5);touchMain();}).catch(()=>{});}
+function finishRoll(){const a=state.active;if(!a)return;a.finishedAt=Date.now();a.status='shot';a.lab='';state.rolls[a.id]=a;state.active=null;touchMain();touchRoll(a.id);renderAll();toast('お疲れさまでした。履歴に移しました');}
+const vr=$('#v-roll');
+vr.addEventListener('submit',ev=>{ev.preventDefault();const f=ev.target;if(f.id!=='load')return;const E=f.elements,iso=+E.iso.value||100,shoot=+E.shoot.value||iso,cam=camById(E.cam.value);
+ const other=E.preset.value==='__other',name=other?E.film.value.trim():E.preset.value;if(!name){toast('フィルムの名前を入れてください');E.film.focus();return;}
+ state.settings.lastFilm=name;
+ state.active={id:newId(),film:name,iso,shoot,type:E.type.value,total:+E.total.value||36,camId:cam.id,camName:cam.name,loadedAt:Date.now(),frames:[],checks:{}};
+ Object.assign(state.exp,{iso:shoot,type:state.active.type,camId:cam.id});fixFT();touchMain();renderAll();toast('装填しました。良い一本を');});
+vr.addEventListener('input',ev=>{const t=ev.target,E=t.form&&t.form.elements;if(!E)return;
+ if(t.name==='preset'){const other=t.value==='__other';$('#film-other').hidden=!other;if(other){E.film.focus();return;}const p=FILMS.find(x=>x[0]===t.value);if(p){E.iso.value=p[1];E.shoot.value=p[1];E.type.value=p[2];}}
+ else if(t.name==='iso')E.shoot.value=t.value;});
+vr.addEventListener('click',ev=>{const b=ev.target.closest('[data-act],[data-cnt]');if(!b)return;const a=state.active;
+ if(b.dataset.cnt){const f=b.closest('form');f.elements.total.value=b.dataset.cnt;$$('[data-cnt]',f).forEach(x=>x.setAttribute('aria-pressed',x===b));return;}
+ const act=b.dataset.act;
+ if(act==='shot'){const note=$('#nn').value.trim();addFrame(note?{note}:{});}
+ else if(act==='undo')arm(b,()=>{a.frames.pop();touchMain();renderRoll();renderHeader();toast('1枚戻しました');},'もう一度押すと取り消し');
+ else if(act==='finish')arm(b,finishRoll,'もう一度押すと記録を締めます');
+ else if(act==='frame'){const inp=$(`.fnote[data-i="${+b.dataset.n-1}"]`,vr);if(inp){inp.scrollIntoView({block:'center',behavior:'smooth'});inp.focus({preventScroll:true});}}});
+
+/* ---------- 露出 ---------- */
+function baseEv(){const e=state.exp;if(e.src==='live')return LV.stream?(LV.hold?e.liveEv:LV.ev):e.liveEv;if(e.src==='scene')return (SCENES.find(x=>x.id===e.scene)||SCENES[1]).ev;if(e.src==='photo')return e.photoRaw==null?null:e.photoRaw+state.settings.calib;return e.manualEv;}
+function srcLabel(){const e=state.exp;if(e.src==='live'&&!LV.stream)return 'ライブ測光（前回固定した値）';if(e.src==='live')return 'ライブ測光（'+({avg:'平均',center:'中央',spot:'スポット'}[state.settings.lvMeter]||'')+(LV.hold?'・固定':'')+'）';if(e.src==='scene')return (SCENES.find(x=>x.id===e.scene)||SCENES[1]).name;if(e.src==='photo')return e.photoLabel||'写真';return 'EVを入力';}
+function judge(d,ty){const L=LAT[ty]||LAT.cn,inR=r=>d>=r[0]-1e-6&&d<=r[1]+1e-6,over=d>0;
+ if(inR(L.i))return {lv:0,t:'ちょうどいい',s:'このまま切って大丈夫そうです。'};
+ if(inR(L.o))return {lv:1,t:over?'少し明るめ':'少し暗め',s:over?(ty==='rv'?'リバーサルは明るさがそのまま出ます。気になるなら少し絞って。':'ネガは明るめに強いので、許容範囲です。'):(ty==='rv'?'リバーサルなら、少し暗めでも色が濃くなる程度で済むことが多いです。':'ネガは暗めに弱いので、迷ったら明るい側へ。')};
+ if(inR(L.w))return {lv:2,t:over?'明るすぎ':'暗すぎ',s:over?(ty==='cn'?'カラーネガなら救えることも多いですが、少し絞るか速くするのが無難です。':'1段ほど絞るか、シャッターを速くしましょう。'):'影がつぶれやすい露出です。絞りを開けるか、シャッターを遅く。'};
+ return {lv:3,t:over?'露出オーバー':'露出アンダー',s:over?'白く飛ぶおそれがあります。下の候補を見てください。':'ほとんど写らないおそれがあります。下の候補を見てください。'};}
+let dialType=null;
+function drawDial(){const ty=state.exp.type;if(dialType===ty)return;dialType=ty;
+ const cx=160,cy=190,R=120,P=(v,r)=>{const a=v/3*62*Math.PI/180;return [cx+r*Math.sin(a),cy-r*Math.cos(a)]},f=n=>n.toFixed(1);
+ const arc=(a,b,c)=>{const [x1,y1]=P(clamp(a,-3,3),R),[x2,y2]=P(clamp(b,-3,3),R);return `<path class="${c}" d="M${f(x1)} ${f(y1)}A${R} ${R} 0 0 1 ${f(x2)} ${f(y2)}"/>`};
+ const L=LAT[ty]||LAT.cn;let s=arc(-3,3,'z0')+arc(...L.w,'zw')+arc(...L.o,'zo')+arc(...L.i,'zi');
+ for(let n=-9;n<=9;n++){const v=n/3,mj=n%3===0,[x1,y1]=P(v,R+9),[x2,y2]=P(v,R+(mj?21:15));s+=`<line class="tk${mj?' mj':''}" x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`;
+  if(mj){const [tx,ty2]=P(v,R+35);s+=`<text class="tl" x="${f(tx)}" y="${f(ty2+5)}" text-anchor="middle">${v>0?'+'+v:v<0?'−'+(-v):'0'}</text>`;}}
+ s+=`<text class="side" x="10" y="202">アンダー</text><text class="side" x="310" y="202" text-anchor="end">オーバー</text><g id="needle"><line class="nd" x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-R-8}"/><circle class="pv" cx="${cx}" cy="${cy}" r="9"/></g>`;
+ $('#dial').innerHTML=`<svg viewBox="0 0 320 208" role="img" aria-label="露出のずれを示すメーター。濃い帯がちょうどいい範囲">${s}</svg>`;}
+function updateResult(){
+ const e=state.exp,cam=camById(e.camId),base=baseEv(),g=$('#gauge'),sg=$('#v-sugg'),eq=$('#eq');
+ if(base==null||!isFinite(base)){g.className='gauge';$('#needle').style.transform='rotate(0deg)';$('#v-main').textContent='明るさが未設定';$('#v-sub').textContent=e.src==='live'?'カメラを起動すると、ここに結果が出ます。明るさの絶対値が測れない端末では「状況」か「写真」を使ってください。':'写真を選んで「使う」を押すか、別の決め方を選んでください。';$('#v-ev').textContent='';sg.innerHTML='';eq.innerHTML='';return;}
+ const tgt=base+L2(e.iso/100)-e.comp-e.filt,set=L2(e.f*e.f/e.t),d=tgt-set,j=judge(d,e.type),k=2**tgt;
+ g.className='gauge lv'+j.lv;$('#needle').style.transform=`rotate(${(clamp(d,-3.4,3.4)/3*62).toFixed(2)}deg)`;
+ $('#v-main').innerHTML=`${j.t}<span class="num">${fmtStops(d)}</span>`;
+ const hand=e.t>1.01/cam.focal;
+ $('#v-sub').textContent=j.s+(hand?` なお${fmtT(e.t)}は手ブレしやすい速さです（${cam.focal}mmなら1/${cam.focal}より速いと安心）。`:'');
+ const adj=[];if(e.comp)adj.push('補正'+fmtStops(e.comp));if(e.filt)adj.push('フィルター'+fmtStops(e.filt));
+ $('#v-ev').textContent=`${srcLabel()}：EV${fmtEv(base)}（ISO100基準）。ISO${e.iso}${adj.length?'・'+adj.join('・'):''}で必要な露出はEV${fmtEv(tgt)}、いまの設定はEV${fmtEv(set)}。`;
+ const sp=cam.speeds,fs=cam.fs,slow=Math.max(...sp),fast=Math.min(...sp),fMin=Math.min(...fs),fMax=Math.max(...fs),tip=x=>Math.abs(x)>0.17?`（${fmtStops(x)}）`:'',items=[];
+ const tA=e.f*e.f/k;
+ if(tA>slow*1.12)items.push(`<b>${fmtF(e.f)}のままなら</b>最も遅い${fmtT(slow)}でも足りません。B（バルブ）で約${fmtSec(tA)}${tA>1?'。1秒を超える露光は、フィルムによって相反則不軌の補正が要ります（データシートを確認）':''}。`);
+ else if(tA<fast/1.12)items.push(`<b>${fmtF(e.f)}のままなら</b>最高速の${fmtT(fast)}でも${fmtAbs(L2(fast/tA))}明るすぎます。絞るか、NDフィルターを。`);
+ else{const tN=sp[idxNear(sp,tA)];items.push(`<b>${fmtF(e.f)}のままなら</b><span class="num">${fmtT(tN)}</span>${tip(L2(tN/tA))}`);}
+ const fA=Math.sqrt(e.t*k);
+ if(fA>fMax*1.06)items.push(`<b>${fmtT(e.t)}のままなら</b>最小絞りの${fmtF(fMax)}でも${fmtAbs(2*L2(fA/fMax))}明るすぎます。`);
+ else if(fA<fMin/1.06)items.push(`<b>${fmtT(e.t)}のままなら</b>開放の${fmtF(fMin)}でも${fmtAbs(2*L2(fMin/fA))}暗いです。`);
+ else{const fN=fs[idxNear(fs,fA)];items.push(`<b>${fmtT(e.t)}のままなら</b><span class="num">${fmtF(fN)}</span>${tip(2*L2(fA/fN))}`);}
+ let best=null;fs.forEach((f,i)=>{const ti=idxNear(sp,f*f/k),dd=L2(sp[ti]/(f*f/k)),sc=Math.abs(dd)*4+(sp[ti]>1.01/cam.focal?3:0)+Math.abs(L2(f/8))*0.7;if(!best||sc<best.sc)best={i,ti,dd,sc};});
+ if(best&&Math.abs(best.dd)<=1)items.push(`<b>迷ったら</b><span class="num">${fmtF(fs[best.i])}・${fmtT(sp[best.ti])}</span>${tip(best.dd)}　<button class="btn sm" data-act="pick" data-fi="${best.i}" data-ti="${best.ti}">この設定にする</button><br><span class="small muted">手ブレしにくい速さで、f/8付近を優先して選んでいます。</span>`);
+ sg.innerHTML=items.map(x=>`<li>${x}</li>`).join('');
+ eq.innerHTML='<thead><tr><th>絞り</th><th>シャッター</th><th>ずれ</th><th>メモ</th></tr></thead><tbody>'+fs.map((f,i)=>{const t0=f*f/k,ti=idxNear(sp,t0),dd=L2(sp[ti]/t0);let note='',ok=true;
+  if(t0>slow*1.12){note='B（バルブ）で約'+fmtSec(t0);ok=false}else if(t0<fast/1.12){note='最高速でも明るすぎ';ok=false}else if(sp[ti]>1.01/cam.focal)note='手ブレ注意';
+  return `<tr class="${f===e.f?'cur':''}${ok?'':' na'}"${ok?` data-fi="${i}" data-ti="${ti}"`:''}><td>${fmtF(f)}</td><td>${ok?fmtT(sp[ti]):'—'}</td><td>${ok?(Math.abs(dd)>0.17?fmtStops(dd):'±0'):''}</td><td>${note}</td></tr>`}).join('')+'</tbody>';
+}
+function syncMeter(){
+ const e=state.exp,cam=camById(e.camId);fixFT();
+ $('#m-cam').innerHTML=state.cameras.map(c=>`<option value="${c.id}"${c.id===cam.id?' selected':''}>${esc(c.name)}</option>`).join('');
+ $('#m-f').innerHTML=cam.fs.map((f,i)=>`<option value="${i}">${fmtF(f)}</option>`).join('');$('#m-f').value=String(idxNear(cam.fs,e.f));
+ $('#m-t').innerHTML=cam.speeds.map((t,i)=>`<option value="${i}">${fmtT(t)}</option>`).join('');$('#m-t').value=String(idxNear(cam.speeds,e.t));
+ $$('[data-src]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.src===e.src)));
+ ['scene','live','photo','ev'].forEach(k=>$('#p-'+k).hidden=e.src!==k);
+ $$('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(e.src==='scene'&&b.dataset.scene===e.scene)));
+ $('#m-iso').value=e.iso;$('#m-type').value=e.type;$('#m-comp').value=Math.round(e.comp*3);$('#comp-out').textContent=fmtStops(e.comp);
+ $('#m-filt').value=String(Math.max(0,FILTS.findIndex(x=>Math.abs(x[1]-e.filt)<1e-6)));
+ $('#ev-out').textContent='EV'+fmtEv(e.manualEv);$('#cal-out').textContent=fmtStops(state.settings.calib);
+ $('[data-act="logshot"]').disabled=!state.active;$('[data-act="logshot"]').textContent=state.active?'この露出で1枚撮った':'フィルム未装填（記録タブで装填）';
+ $('#lv-n').value=state.settings.lvN;$('#lcal-out').textContent=fmtStops(state.settings.lcalib);$('#lv-mode').value=state.settings.lvMode;lvUI();sunHint();
+ drawDial();updateResult();}
+$('#scene-chips').innerHTML=SCENES.map(s=>`<button class="chip" data-scene="${s.id}"><span>${s.name}</span><small>EV${minus(s.r||s.ev)}</small></button>`).join('');
+$('#m-type').innerHTML=Object.entries(TYPES).map(([k,x])=>`<option value="${k}">${x}</option>`).join('');
+$('#m-filt').innerHTML=FILTS.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join('');
+
+/* 写真から測る */
+let ph=null;
+const LUT=Array.from({length:256},(_,i)=>{const c=i/255;return c<=0.04045?c/12.92:((c+0.055)/1.055)**2.4});
+function parseExif(buf){
+ const u=new Uint8Array(buf),n=u.length;let st=-1;
+ for(let i=0;i<n-10;i++){if(u[i]===0x45&&u[i+1]===0x78&&u[i+2]===0x69&&u[i+3]===0x66&&u[i+4]===0&&u[i+5]===0){const b=i+6;if((u[b]===0x49&&u[b+1]===0x49&&u[b+2]===0x2a&&u[b+3]===0)||(u[b]===0x4d&&u[b+1]===0x4d&&u[b+2]===0&&u[b+3]===0x2a)){st=b;break;}}}
+ if(st<0)return null;
+ const dv=new DataView(buf),le=u[st]===0x49,o={},g16=p=>dv.getUint16(st+p,le),g32=p=>dv.getUint32(st+p,le),gi=p=>dv.getInt32(st+p,le),ok=p=>st+p+12<=n;
+ const ifd=off=>{if(!off||!ok(off))return 0;let sub=0;const cnt=g16(off);
+  for(let i=0;i<cnt;i++){const e=off+2+i*12;if(!ok(e))break;const tag=g16(e),ty=g16(e+2),c=g32(e+4),vo=e+8;
+   const big=ty===5||ty===10||(ty===2&&c>4)||(ty===4&&c>1)||(ty===3&&c>2),at=big?g32(vo):vo;if(st+at+8>n)continue;
+   const num=()=>ty===3?g16(at):ty===4?g32(at):ty===5?(g32(at+4)?g32(at)/g32(at+4):NaN):ty===10?(gi(at+4)?gi(at)/gi(at+4):NaN):NaN;
+   const str=()=>{let s='';for(let q=0;q<c&&q<64;q++){const ch=u[st+at+q];if(!ch)break;s+=String.fromCharCode(ch)}return s.trim()};
+   if(tag===0x8769)sub=g32(vo);else if(tag===0x829a)o.t=num();else if(tag===0x829d)o.f=num();else if(tag===0x8827)o.iso=num();else if(tag===0x8833&&!o.iso)o.iso=num();
+   else if(tag===0x9201)o.tv=num();else if(tag===0x9202)o.av=num();else if(tag===0x0110)o.model=str();}
+  return sub;};
+ const sub=ifd(g32(4));if(sub)ifd(sub);
+ if(!(o.t>0)&&isFinite(o.tv))o.t=2**-o.tv;if(!(o.f>0)&&isFinite(o.av))o.f=2**(o.av/2);
+ return o.t>0&&o.f>0&&o.iso>0?o:null;}
+const loadImg=file=>new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error('この形式の画像は表示できませんでした'));im.src=URL.createObjectURL(file);});
+function region(fn){let s=0,c=0,hi=0,lo=0;for(let y=0;y<ph.gh;y++)for(let x=0;x<ph.gw;x++){if(!fn(x,y))continue;const v=ph.Y[y*ph.gw+x];s+=v;c++;if(v>0.9)hi++;if(v<0.004)lo++;}return c?{y:s/c,hi:hi/c,lo:lo/c}:{y:0.18,hi:0,lo:0};}
+const phEv0=()=>ph&&ph.ex?L2(ph.ex.f*ph.ex.f/ph.ex.t)-L2(ph.ex.iso/100):null;
+async function onPhoto(file){
+ const out=$('#ph-out');out.innerHTML='<p class="muted">読み込み中…</p>';
+ try{const buf=await file.arrayBuffer(),ex=parseExif(buf),img=await loadImg(file);
+  const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,gw=160,gh=Math.max(1,Math.round(h/w*gw));
+  const c=document.createElement('canvas');c.width=gw;c.height=gh;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,gw,gh);
+  const d=x.getImageData(0,0,gw,gh).data,Y=new Float32Array(gw*gh);for(let i=0,j=0;i<d.length;i+=4,j++)Y[j]=0.2126*LUT[d[i]]+0.7152*LUT[d[i+1]]+0.0722*LUT[d[i+2]];
+  ph={img,w,h,gw,gh,Y,ex,spot:null};ph.avg=region(()=>true);ph.center=region((a,b)=>a>=gw*.3&&a<gw*.7&&b>=gh*.3&&b<gh*.7);
+  out.innerHTML=`<canvas class="ph-cv" id="ph-cv" aria-label="選んだ写真。タップした点の明るさを測ります"></canvas><p class="small muted">写真をタップすると、その点だけの明るさ（スポット測光）も出ます。点線の枠が「中央部」です。</p><div id="ph-read"></div><p class="small" id="ph-info"></p>`;
+  $('#ph-cv').addEventListener('click',ev=>{const b=ev.currentTarget.getBoundingClientRect(),sx=(ev.clientX-b.left)/b.width*gw,sy=(ev.clientY-b.top)/b.height*gh,r=Math.max(1.5,0.05*Math.min(gw,gh));
+   ph.spot={x:sx/gw,y:sy/gh,...region((a,q)=>(a+.5-sx)**2+(q+.5-sy)**2<=r*r)};phDraw();phRead();});
+  phDraw();phRead();
+ }catch(err){ph=null;out.innerHTML=`<p class="warn">写真を読み込めませんでした（${esc(err.message||err)}）。</p>`;}}
+function phDraw(){if(!ph)return;const c=$('#ph-cv');if(!c)return;const box=$('#ph-out').clientWidth;if(!box)return;
+ const sc=Math.min(box/ph.w,Math.min(420,innerHeight*.55)/ph.h),W=Math.round(ph.w*sc),H=Math.round(ph.h*sc),dpr=Math.min(2,devicePixelRatio||1);
+ c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.drawImage(ph.img,0,0,W,H);
+ x.strokeStyle='rgba(255,255,255,.8)';x.lineWidth=1.5;x.setLineDash([5,4]);x.strokeRect(W*.3,H*.3,W*.4,H*.4);x.setLineDash([]);
+ if(ph.spot){const r=Math.max(10,.05*Math.min(W,H));x.lineWidth=3;x.strokeStyle='#ff5b3d';x.beginPath();x.arc(ph.spot.x*W,ph.spot.y*H,r,0,Math.PI*2);x.stroke();}}
+function phRead(){if(!ph||!$('#ph-read'))return;const ev0=phEv0(),cal=state.settings.calib;
+ const rows=[['avg','全体の平均',ph.avg],['center','中央部',ph.center]];if(ph.spot)rows.push(['spot','タップした点',ph.spot]);
+ $('#ph-read').innerHTML=rows.map(([k,lab,r])=>{const clip=r.hi>0.25?'<br><span class="small warn">白飛び気味：実際はもっと明るいかも</span>':r.lo>0.25?'<br><span class="small warn">黒つぶれ気味：実際はもっと暗いかも</span>':'';
+  const val=ev0==null?(k==='avg'?'基準':fmtStops(L2(Math.max(r.y,1e-4)/Math.max(ph.avg.y,1e-4)))):'EV'+fmtEv(ev0+cal+L2(Math.max(r.y,1e-4)/0.18));
+  return `<div class="rd"><span>${lab}${clip}</span><b class="num">${val}</b>${ev0==null?'<span></span>':`<button class="btn sm" data-act="useph" data-k="${k}">使う</button>`}</div>`}).join('');
+ const ex=ph.ex;$('#ph-info').innerHTML=ex?`写真の記録：${fmtF(ex.f)}・${fmtT(ex.t)}・ISO${Math.round(ex.iso)}${ex.model?`（${esc(ex.model)}）`:''}。スマホの画像処理の影響を受けるので、目安として使ってください。`
+  :'<span class="warn">この写真からは露出の情報（F値・シャッター速度・ISO）が読めませんでした。</span>写真の中の明るさの差（全体の平均との比較）だけ表示しています。写真ライブラリから選び直すか、「EVを入力」を使ってください。';}
+const phObs=new ResizeObserver(()=>phDraw());phObs.observe($('#p-photo'));
+
+/* ライブ測光 */
+const LV={stream:null,track:null,caps:{},mode:null,modeErr:'',t:1/125,iso:100,settle:0,ev:null,hold:false,spot:null,timer:null,reps:new Set(),ticks:0,last:null};
+const lvC=document.createElement('canvas'),lvX=lvC.getContext('2d',{willReadFrequently:true});let lvY=null;
+const lvMsg=m=>{const el=$('#lv-msg');el.textContent=m;el.hidden=!m;};
+const lvN=()=>{const n=+state.settings.lvN;return n>0?n:1.7};
+const snap=(v,r)=>r&&r.step>0?r.min+Math.round((v-r.min)/r.step)*r.step:v;
+function lvUI(){const on=!!LV.stream,hb=$('#lv-holdbtn');$('#lv-startbtn').textContent=on?'カメラを止める':'カメラを起動';hb.disabled=!on;hb.textContent=LV.hold?'固定を解除':'値を固定';hb.classList.toggle('armed',LV.hold);
+ $$('[data-lm]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lm===state.settings.lvMeter)));
+ $('#lv-mode-txt').textContent=on?({manual:'手動露出に切り替えて測っています（いちばん正確な方式）。',report:'端末が報告する自動露出の値で測っています。値がずっと変わらないときは、正しく測れていません。',rel:'このブラウザはカメラの露出の値を教えてくれないため、明るさの絶対値は測れません。画面の中の明暗差だけ表示します。'}[LV.mode]||'')+(LV.modeErr?`（手動露出への切り替えは失敗：${LV.modeErr}）`:''):'カメラを起動すると、この端末で使える測り方が分かります。';}
+function lvStop(){if(LV.timer)clearInterval(LV.timer);LV.timer=null;if(LV.stream)LV.stream.getTracks().forEach(t=>t.stop());LV.stream=LV.track=null;LV.ev=null;LV.last=null;const v=$('#lv');if(v)v.srcObject=null;
+ const c=$('#lv-ov');c.getContext('2d').clearRect(0,0,c.width,c.height);lvMsg('「カメラを起動」を押すと、ここに映像が出ます。');$('#lv-ev').textContent='EV —';$('#lv-st').textContent='';lvUI();if(state.exp.src==='live')updateResult();}
+async function lvStart(){
+ lvStop();
+ if(!window.isSecureContext||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){lvMsg('このページではカメラを使えません（https のページで開いてください）。');return;}
+ lvMsg('カメラを起動しています…');
+ const S=state.settings,v={width:{ideal:1280},height:{ideal:720}};if(S.lvDev)v.deviceId={exact:S.lvDev};else v.facingMode={ideal:'environment'};
+ let stream;try{stream=await navigator.mediaDevices.getUserMedia({video:v,audio:false});}
+ catch(e){lvMsg(e&&e.name==='NotAllowedError'?'カメラの使用が許可されませんでした。ブラウザのサイト設定でカメラを許可してください。':`カメラを起動できませんでした（${e&&e.name||e}）。`);lvUI();return;}
+ if(state.exp.src!=='live'||$('#v-meter').hidden){stream.getTracks().forEach(t=>t.stop());return;}
+ LV.stream=stream;const vid=$('#lv');vid.srcObject=stream;try{await vid.play();}catch(e){}
+ LV.track=stream.getVideoTracks()[0];LV.caps=LV.track.getCapabilities?LV.track.getCapabilities():{};LV.modeErr='';LV.hold=false;LV.ev=null;LV.reps=new Set();LV.ticks=0;
+ await lvDevices();LV.mode=lvPick();
+ if(LV.mode==='manual')await lvManualInit();
+ else if(Array.isArray(LV.caps.exposureMode)&&LV.caps.exposureMode.includes('continuous')){try{await LV.track.applyConstraints({advanced:[{exposureMode:'continuous'}]});}catch(e){}}
+ lvMsg('');LV.timer=setInterval(lvTick,200);lvUI();lvDiag();updateResult();}
+function lvPick(){const c=LV.caps,st=LV.track.getSettings?LV.track.getSettings():{},want=state.settings.lvMode;
+ const man=Array.isArray(c.exposureMode)&&c.exposureMode.includes('manual')&&c.exposureTime&&c.exposureTime.max>0,rep=st.exposureTime>0&&st.iso>0;
+ if(want==='rel')return 'rel';if(want==='report'&&rep)return 'report';if(want==='manual'&&man)return 'manual';return man?'manual':rep?'report':'rel';}
+async function lvManualInit(){const c=LV.caps;LV.isoMin=c.iso&&c.iso.min>0?c.iso.min:100;LV.isoMax=c.iso&&c.iso.max>0?c.iso.max:LV.isoMin;
+ LV.tMin=Math.max(c.exposureTime.min||0,0.1)*1e-4;LV.tMax=Math.max(LV.tMin,Math.min(c.exposureTime.max*1e-4,1/15));LV.t=clamp(1/125,LV.tMin,LV.tMax);LV.iso=LV.isoMin;await lvApply();}
+async function lvApply(){const c=LV.caps,u=snap(LV.t*1e4,c.exposureTime),ad={exposureMode:'manual',exposureTime:u};LV.t=u*1e-4;if(c.iso){LV.iso=snap(LV.iso,c.iso);ad.iso=LV.iso;}
+ try{await LV.track.applyConstraints({advanced:[ad]});LV.settle=performance.now()+450;}
+ catch(e){LV.modeErr=e&&e.name||'error';const st=LV.track.getSettings?LV.track.getSettings():{};LV.mode=st.exposureTime>0&&st.iso>0?'report':'rel';try{await LV.track.applyConstraints({advanced:[{exposureMode:'continuous'}]});}catch(_){}lvUI();}}
+async function lvDevices(){try{const ds=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+ $('#lv-dev').innerHTML='<option value="">自動（背面）</option>'+ds.map((d,i)=>`<option value="${esc(d.deviceId)}">${esc(d.label||'カメラ'+(i+1))}</option>`).join('');$('#lv-dev').value=ds.some(d=>d.deviceId===state.settings.lvDev)?state.settings.lvDev:'';}catch(e){}}
+function lvDiag(){const md=navigator.mediaDevices,sc=md&&md.getSupportedConstraints?md.getSupportedConstraints():{},st=LV.track&&LV.track.getSettings?LV.track.getSettings():{},K=['exposureMode','exposureTime','iso','exposureCompensation','width','height','frameRate'],pick=o=>Object.fromEntries(K.filter(k=>o&&k in o).map(k=>[k,o[k]]));
+ $('#lv-diag').textContent=JSON.stringify({ブラウザ:navigator.userAgent,方式:LV.mode,手動露出の失敗:LV.modeErr||null,カメラ:LV.track?LV.track.label:null,対応する制約:pick(sc),能力:pick(LV.caps),現在の設定:pick(st)},null,1);}
+function lvOverlay(){const c=$('#lv-ov'),b=c.getBoundingClientRect();if(!b.width)return;const dpr=Math.min(2,devicePixelRatio||1),W=b.width,H=b.height;
+ if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+ const x=c.getContext('2d'),m=state.settings.lvMeter;x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);x.lineWidth=1.5;x.strokeStyle='rgba(255,255,255,.85)';
+ if(m==='center'){x.setLineDash([5,4]);x.strokeRect(W*.3,H*.3,W*.4,H*.4);x.setLineDash([]);}
+ if(m==='spot'){if(LV.spot){x.lineWidth=3;x.strokeStyle='#ff5b3d';x.beginPath();x.arc(LV.spot.x*W,LV.spot.y*H,Math.max(10,.05*Math.min(W,H)),0,Math.PI*2);x.stroke();}
+  else{x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,H-30,W,30);x.fillStyle='#fff';x.font='14px sans-serif';x.textAlign='center';x.fillText('測りたい所をタップ',W/2,H-10);}}
+ if(LV.hold){x.fillStyle='#ff5b3d';x.font='600 15px sans-serif';x.textAlign='left';x.fillText('固定中',10,22);}}
+function lvTick(){
+ const vid=$('#lv');if(!LV.track||!vid.videoWidth)return;LV.ticks++;
+ const box=$('#lv-box'),ar=vid.videoWidth/vid.videoHeight;if(box.dataset.ar!==String(ar)){box.dataset.ar=String(ar);box.style.aspectRatio=vid.videoWidth+'/'+vid.videoHeight;box.style.maxWidth=`calc(46vh * ${ar.toFixed(4)})`;}
+ const gw=96,gh=Math.max(1,Math.round(gw/ar));if(lvC.width!==gw||lvC.height!==gh||!lvY){lvC.width=gw;lvC.height=gh;lvY=new Float32Array(gw*gh);}
+ lvX.drawImage(vid,0,0,gw,gh);const d=lvX.getImageData(0,0,gw,gh).data;for(let i=0,j=0;i<d.length;i+=4,j++)lvY[j]=0.2126*LUT[d[i]]+0.7152*LUT[d[i+1]]+0.0722*LUT[d[i+2]];
+ const reg=fn=>{let s=0,c=0,hi=0,lo=0;for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){if(!fn(x,y))continue;const v=lvY[y*gw+x];s+=v;c++;if(v>0.9)hi++;if(v<0.004)lo++;}return c?{y:s/c,hi:hi/c,lo:lo/c}:{y:0.18,hi:0,lo:0}};
+ const S=state.settings,m=S.lvMeter,avg=reg(()=>true);let r=avg;
+ if(m==='center')r=reg((x,y)=>x>=gw*.3&&x<gw*.7&&y>=gh*.3&&y<gh*.7);
+ else if(m==='spot'&&LV.spot){const sx=LV.spot.x*gw,sy=LV.spot.y*gh,rr=Math.max(1.5,.05*Math.min(gw,gh));r=reg((x,y)=>(x+.5-sx)**2+(y+.5-sy)**2<=rr*rr);}
+ lvOverlay();if(LV.ticks%10===1)lvDiag();
+ if(LV.hold)return;
+ let ev=null,st='',warn='';
+ if(LV.mode==='manual'){
+  if(performance.now()<LV.settle)return;
+  if(r.y>0.45||r.hi>0.15||r.y<0.05){const k=clamp(0.18/Math.max(r.y,0.003),1/16,16),E=LV.t*LV.iso*k;let iso=LV.isoMin,t=E/iso;if(t>LV.tMax){t=LV.tMax;iso=clamp(E/t,LV.isoMin,LV.isoMax);}t=clamp(t,LV.tMin,LV.tMax);
+   if(Math.abs(L2((t*iso)/(LV.t*LV.iso)))>0.15){LV.t=t;LV.iso=iso;lvApply();return;}
+   warn=r.y<0.05?'暗すぎて、測れる範囲を超えているかもしれません':'明るすぎて、測れる範囲を超えているかもしれません';}
+  const g=LV.track.getSettings?LV.track.getSettings():{},t=g.exposureTime>0?g.exposureTime*1e-4:LV.t,iso=g.iso>0?g.iso:LV.iso;
+  ev=L2(lvN()**2/t)-L2(iso/100)+L2(Math.max(r.y,1e-4)/0.18)+S.lcalib;st=`手動露出 ${fmtT(t)}・ISO${Math.round(iso)}`;
+ }else if(LV.mode==='report'){
+  const g=LV.track.getSettings?LV.track.getSettings():{};
+  if(g.exposureTime>0&&g.iso>0){LV.reps.add(g.exposureTime+'/'+g.iso);const t=g.exposureTime*1e-4;ev=L2(lvN()**2/t)-L2(g.iso/100)+L2(Math.max(r.y,1e-4)/0.18)+S.lcalib;st=`自動露出の報告値 ${fmtT(t)}・ISO${Math.round(g.iso)}`;
+   if(LV.ticks>40&&LV.reps.size<2)warn='報告値がずっと同じです。正しく測れていない可能性があります';}
+ }else st=m==='avg'||(m==='spot'&&!LV.spot)?'明暗差のみ（平均が基準）':`${m==='center'?'中央':'スポット'}は平均より${fmtStops(L2(Math.max(r.y,1e-4)/Math.max(avg.y,1e-4)))}`;
+ if(ev!=null&&isFinite(ev))LV.ev=LV.ev==null||Math.abs(ev-LV.ev)>1.5?ev:LV.ev+0.35*(ev-LV.ev);
+ $('#lv-ev').textContent=LV.ev!=null?'EV'+fmtEv(LV.ev):(LV.mode==='rel'?'EV 測定不可':'EV —');$('#lv-st').textContent=st+(warn?'。'+warn:'');
+ if(state.exp.src==='live'&&LV.ev!=null&&(LV.last==null||Math.abs(LV.ev-LV.last)>0.03)){LV.last=LV.ev;updateResult();}}
+$('#lv-ov').addEventListener('click',ev=>{if(!LV.stream)return;const b=ev.currentTarget.getBoundingClientRect();LV.spot={x:(ev.clientX-b.left)/b.width,y:(ev.clientY-b.top)/b.height};state.settings.lvMeter='spot';LV.ev=null;touchMain();lvUI();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)lvStop();else if(state.exp.src==='live'&&!$('#v-meter').hidden)lvStart();});
+
+const mv=$('#v-meter');
+mv.addEventListener('click',ev=>{const b=ev.target.closest('[data-act],[data-src],[data-scene],[data-lm],tr[data-fi]');if(!b)return;const e=state.exp,cam=camById(e.camId),A=b.dataset.act,S=state.settings;
+ if(b.dataset.lm){S.lvMeter=b.dataset.lm;LV.ev=null;touchMain();lvUI();return;}
+ if(A==='lv-start'){LV.stream?lvStop():lvStart();return;}
+ if(A==='lv-hold'){LV.hold=!LV.hold;if(LV.hold&&LV.ev!=null){e.liveEv=LV.ev;touchMain();}lvUI();updateResult();return;}
+ if(A==='lcal-'||A==='lcal+'){S.lcalib=clamp(Math.round(S.lcalib*3+(A==='lcal+'?1:-1))/3,-3,3);$('#lcal-out').textContent=fmtStops(S.lcalib);LV.ev=null;touchMain();return;}
+ if(A==='lv-copy'){copyText($('#lv-diag').textContent);return;}
+ if(b.dataset.src){e.src=b.dataset.src;if(e.src==='live'){if(!LV.stream)lvStart();}else lvStop();}
+ else if(b.dataset.scene){e.src='scene';e.scene=b.dataset.scene;}
+ else if(b.dataset.fi!=null){e.f=cam.fs[+b.dataset.fi];e.t=cam.speeds[+b.dataset.ti];if(A==='pick')toast('設定しました');}
+ else if(A==='f-'||A==='f+')e.f=cam.fs[clamp(idxNear(cam.fs,e.f)+(A==='f+'?1:-1),0,cam.fs.length-1)];
+ else if(A==='t-'||A==='t+')e.t=cam.speeds[clamp(idxNear(cam.speeds,e.t)+(A==='t+'?1:-1),0,cam.speeds.length-1)];
+ else if(A==='ev-'||A==='ev+'){e.manualEv=Math.round(e.manualEv*3+(A==='ev+'?1:-1))/3;e.src='ev';}
+ else if(A==='dc'){const f=parseFloat($('#dc-f').value),t=parseT($('#dc-t').value),iso=parseFloat($('#dc-iso').value);if(!(f>0&&t>0&&iso>0)){toast('F値・シャッター・ISOを確かめてください');return;}e.manualEv=L2(f*f/t)-L2(iso/100);e.src='ev';toast(`EV${fmtEv(e.manualEv)}をセットしました`);}
+ else if(A==='cal-'||A==='cal+'){state.settings.calib=clamp(Math.round(state.settings.calib*3+(A==='cal+'?1:-1))/3,-3,3);phRead();}
+ else if(A==='useph'){const r=ph&&ph[b.dataset.k],ev0=phEv0();if(!r||ev0==null)return;e.photoRaw=ev0+L2(Math.max(r.y,1e-4)/0.18);e.photoLabel='写真（'+{avg:'全体の平均',center:'中央部',spot:'タップした点'}[b.dataset.k]+'）';e.src='photo';toast('露出計にセットしました');window.scrollTo({top:0,behavior:'smooth'});}
+ else if(A==='logshot'){if(!state.active)return;const base=baseEv();addFrame({f:e.f,t:e.t,ev:base==null?null:r1(base),note:srcLabel()});return;}
+ else return;
+ touchMain();syncMeter();});
+mv.addEventListener('input',ev=>{const t=ev.target,e=state.exp;
+ if(t.id==='lv-n'){const n=parseFloat(t.value);if(n>0){state.settings.lvN=n;LV.ev=null;touchMain();}return;}
+ if(t.id==='m-comp'){e.comp=+t.value/3;$('#comp-out').textContent=fmtStops(e.comp);updateResult();touchMain();}
+ else if(t.id==='m-iso'&&+t.value>0){e.iso=+t.value;updateResult();touchMain();}});
+mv.addEventListener('change',ev=>{const t=ev.target,e=state.exp,cam=camById(e.camId);
+ if(t.id==='ph-in'){const f=t.files&&t.files[0];if(f)onPhoto(f);t.value='';return;}
+ if(t.id==='lv-dev'||t.id==='lv-mode'){state.settings[t.id==='lv-dev'?'lvDev':'lvMode']=t.value;touchMain();if(LV.stream)lvStart();return;}
+ if(t.id==='m-f')e.f=cam.fs[+t.value];else if(t.id==='m-t')e.t=cam.speeds[+t.value];else if(t.id==='m-type')e.type=t.value;else if(t.id==='m-filt')e.filt=FILTS[+t.value][1];else if(t.id==='m-cam'){e.camId=t.value;fixFT();}else return;
+ touchMain();syncMeter();});
+
+/* ---------- 道具 ---------- */
+const RAD=Math.PI/180,DAY=864e5,J1970=2440588,J2000=2451545,OBL=RAD*23.4397;
+const fromJ=j=>new Date((j+0.5-J1970)*DAY);
+function sunTimes(date,lat,lng){
+ const lw=RAD*-lng,phi=RAD*lat,d=date.valueOf()/DAY-0.5+J1970-J2000,n=Math.round(d-0.0009-lw/(2*Math.PI)),ds=0.0009+lw/(2*Math.PI)+n;
+ const M=RAD*(357.5291+0.98560028*ds),C=RAD*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M)),Lg=M+C+RAD*102.9372+Math.PI;
+ const dec=Math.asin(Math.sin(OBL)*Math.sin(Lg)),tr=a=>J2000+a+0.0053*Math.sin(M)-0.0069*Math.sin(2*Lg),Jn=tr(ds);
+ const at=h=>{const w=Math.acos((Math.sin(h*RAD)-Math.sin(phi)*Math.sin(dec))/(Math.cos(phi)*Math.cos(dec))),Js=tr(0.0009+(w+lw)/(2*Math.PI)+n);return [fromJ(Jn-(Js-Jn)),fromJ(Js)]};
+ return {noon:fromJ(Jn),rise:at(-0.833),g6:at(6),b4:at(-4),b6:at(-6)};}
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+function placeCoords(){const s=state.settings;if(s.place==='here')return s.hereLat!=null?[s.hereLat,s.hereLon]:null;if(s.place==='custom')return isFinite(s.lat)&&isFinite(s.lon)&&s.lat!==''?[+s.lat,+s.lon]:null;const p=PLACES[s.place];return p&&p[1]!=null?[p[1],p[2]]:null;}
+function sunHint(){const el=$('#sun-hint');if(!el)return;const c=placeCoords();if(!c){el.textContent='「道具」の光の時刻で場所を決めると、いまが晴天・曇天の目安を使える時間帯かどうかもここに出ます。';return;}
+ const now=new Date(),T=sunTimes(new Date(now.getFullYear(),now.getMonth(),now.getDate(),12),c[0],c[1]),r=T.rise[0],st=T.rise[1],H=2*3600e3;if(isNaN(r)){el.textContent='';return;}
+ const s=state.settings,w=s.place==='here'?'現在地':s.place==='custom'?'入力した場所':PLACES[s.place][0];
+ el.textContent=now<r||now>st?`いまは日の出前か日の入り後です（${w}：日の出${hm(r)}・日の入り${hm(st)}）。晴天・曇天の値は当てはまりません。`:(now-r<H||st-now<H)?`日の出・日の入りから2時間以内です（${w}：日の出${hm(r)}・日の入り${hm(st)}）。光が弱く、表の値より暗いことが多い時間帯です。`:`日中の時間帯です（${w}：日の入り${hm(st)}）。晴天・曇天の値が目安として使えます。`;}
+async function geoHere(){const st=$('#s-here-st');if(st)st.textContent='取得しています…';
+ try{const p=await getPos(0);Object.assign(state.settings,{hereLat:+p.lat.toFixed(4),hereLon:+p.lon.toFixed(4),hereAcc:p.acc,hereAt:Date.now()});touchMain();updateSun();sunHint();toast('現在地を取得しました');}
+ catch(e){if(st)st.textContent=e&&e.code===1?'位置情報が許可されませんでした。ブラウザのサイト設定で許可してください。':'現在地を取得できませんでした。';}}
+function updateSun(){
+ const s=state.settings,c=placeCoords();$('#s-custom').hidden=s.place!=='custom';$('#s-here').hidden=s.place!=='here';
+ $('#s-here-st').textContent=s.hereLat!=null?`${tstr(s.hereAt)}に取得${s.hereAcc?`（誤差 約${Math.round(s.hereAcc)}m）`:''}`:'まだ取得していません';
+ if(!c){$('#s-list').innerHTML='<li>場所が決まっていません。「現在地を取得」を押すか、場所を選んでください。</li>';$('#s-bar').innerHTML='';return;}
+ const [lat,lon]=c;
+ const dv=$('#s-date').value||todayStr(),[y,m,dd]=dv.split('-').map(Number),mid=new Date(y,m-1,dd),T=sunTimes(new Date(y,m-1,dd,12),+lat,+lon);
+ if(!isFinite(lat)||!isFinite(lon)||isNaN(T.rise[0])){$('#s-list').innerHTML='<li>緯度・経度を確かめてください。</li>';$('#s-bar').innerHTML='';return;}
+ const mm=t=>clamp((t-mid)/6e4,0,1440),pts=[0,mm(T.b6[0]),mm(T.b4[0]),mm(T.g6[0]),mm(T.g6[1]),mm(T.b4[1]),mm(T.b6[1]),1440],ks=['n','b','g','d','g','b','n'];
+ let bar=ks.map((k,i)=>`<i class="s-${k}" style="width:${((pts[i+1]-pts[i])/14.4).toFixed(2)}%"></i>`).join('');
+ if(dv===todayStr()){const now=(Date.now()-mid)/864e3;bar+=`<span class="now" style="left:${now.toFixed(2)}%"></span>`;}
+ $('#s-bar').innerHTML=bar;
+ const K=c=>`<span class="k s-${c}"></span>`;
+ $('#s-list').innerHTML=[[K('b')+'朝のブルーアワー',`${hm(T.b6[0])}–${hm(T.b4[0])}`],['日の出',hm(T.rise[0])],[K('g')+'朝のゴールデンアワー',`${hm(T.b4[0])}–${hm(T.g6[0])}`],['南中（太陽がいちばん高い）',hm(T.noon)],[K('g')+'夕方のゴールデンアワー',`${hm(T.g6[1])}–${hm(T.b4[1])}`],['日の入り',hm(T.rise[1])],[K('b')+'夕方のブルーアワー',`${hm(T.b4[1])}–${hm(T.b6[1])}`]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join('');}
+function updateDof(){
+ const s=state.settings,fl=+$('#d-fl').value,N=+$('#d-f').value,sd=+$('#d-s').value;if(!(fl>0&&N>0&&sd>0))return;s.dfl=fl;s.df=N;s.ds=sd;
+ const H=fl*fl/(N*0.03)+fl,smm=sd*1000,near=smm*(H-fl)/(H+smm-2*fl)/1000,far=smm<H?smm*(H-fl)/(H-smm)/1000:Infinity,Hm=H/1000;
+ const pos=x=>x===Infinity?100:clamp((1-0.7/x)*100,0,100);
+ $('#d-scale').innerHTML=`<div class="rail"></div><div class="in" style="left:${pos(near)}%;width:${(pos(far)-pos(near)).toFixed(2)}%"></div><div class="fp" style="left:${pos(sd)}%"></div>`+[1,1.5,2,3,5,10,Infinity].map(x=>`<span class="lb" style="left:${pos(x)}%">${x===Infinity?'∞':x}</span>`).join('');
+ $('#d-near').textContent=fmtM(near);$('#d-far').textContent=fmtM(far);$('#d-h').textContent=fmtM(Hm);
+ $('#d-zone').textContent=`ゾーンフォーカスなら、ピントを${fmtM(Hm)}に合わせると約${fmtM(Hm/2)}から∞まで収まります。`;
+ $$('[data-ds]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.ds===sd)));}
+function renderChecks(){const a=state.active,ck=a?(a.checks||(a.checks={})):state.checks;
+ $('#ck-scope').textContent=a?`装填中の「${a.film}」のチェックです。新しいフィルムを入れると空になります。`:'フィルムを入れると、一本ごとのチェックになります。';
+ $('#ck-list').innerHTML=CHECKS.map(([h,it])=>`<h3 class="ckh">${h}</h3>`+it.map(([id,t])=>`<label class="check"><input type="checkbox" data-ck="${id}"${ck[id]?' checked':''}><span>${t}</span></label>`).join('')).join('');}
+function initTools(){const s=state.settings;
+ $('#d-f').innerHTML=DFS.map(f=>`<option value="${f}">${fmtF(f)}</option>`).join('');$('#d-fl').value=s.dfl;$('#d-f').value=String(DFS[idxNear(DFS,s.df)]);$('#d-s').value=s.ds;
+ $('#d-chips').innerHTML=DIST.map(x=>`<button class="chip" data-ds="${x}">${x}m</button>`).join('');
+ $('#s-place').innerHTML=Object.entries(PLACES).map(([k,p])=>`<option value="${k}">${p[0]}</option>`).join('');$('#s-place').value=PLACES[s.place]?s.place:'tokyo';
+ $('#s-lat').value=s.lat;$('#s-lon').value=s.lon;if(!$('#s-date').value)$('#s-date').value=todayStr();}
+const tv=$('#v-tools');
+tv.addEventListener('input',ev=>{const t=ev.target,s=state.settings;
+ if(['d-fl','d-f','d-s'].includes(t.id)){updateDof();touchMain();}
+ else if(t.id==='s-lat'||t.id==='s-lon'){const v=parseFloat(t.value);if(isFinite(v)){s[t.id==='s-lat'?'lat':'lon']=v;updateSun();sunHint();touchMain();}}});
+tv.addEventListener('change',ev=>{const t=ev.target,s=state.settings;
+ if(t.id==='s-place'){s.place=t.value;touchMain();if(s.place==='here'&&s.hereLat==null)geoHere();updateSun();sunHint();}else if(t.id==='s-date')updateSun();
+ else if(t.dataset.ck){const a=state.active,ck=a?a.checks:state.checks;ck[t.dataset.ck]=t.checked;touchMain();}});
+tv.addEventListener('click',ev=>{const b=ev.target.closest('[data-ds],[data-act]');if(!b)return;
+ if(b.dataset.ds){$('#d-s').value=b.dataset.ds;updateDof();touchMain();}
+ else if(b.dataset.act==='geo')geoHere();
+ else if(b.dataset.act==='ck-reset'){const a=state.active;if(a)a.checks={};else state.checks={};touchMain();renderChecks();}});
+
+/* ---------- 履歴・設定 ---------- */
+function rollText(r){return [`${r.film}（ISO${r.shoot}で撮影${r.shoot!==r.iso?`、箱はISO${r.iso}`:''}）`,`カメラ：${r.camName||''}`,`期間：${dstr(r.loadedAt)}〜${dstr(r.finishedAt)}`,`状態：${STATUS[r.status]||''}${r.lab?'／'+r.lab:''}`,'',...r.frames.map(f=>[f.n,tstr(f.at),f.f?fmtF(f.f):'',f.t?fmtT(f.t):'',f.note||'',f.lat!=null?f.lat+','+f.lon:''].join('\t'))].join('\n');}
+function renderHistory(){
+ const list=Object.values(state.rolls).filter(r=>!r.deleted).sort((a,b)=>(b.finishedAt||0)-(a.finishedAt||0));
+ $('#h-list').innerHTML='<h1>撮り終えたフィルム</h1>'+(list.length?'<div class="hlist">'+list.map(r=>`<article class="card hroll">
+  <div class="hr-top"><h3>${esc(r.film)} <span class="iso">ISO${r.shoot}</span></h3><span class="tag">${STATUS[r.status]||''}</span></div>
+  <p class="meta" style="margin:0">${esc(r.camName||'')} · ${r.frames.length}/${r.total}枚 · ${dstr(r.loadedAt)}〜${dstr(r.finishedAt)}${r.shoot!==r.iso?` · ${r.shoot>r.iso?'増感':'減感'}${fmtAbs(L2(r.shoot/r.iso))}`:''}</p>
+  <div class="g2"><label>状態<select data-rid="${r.id}" data-k="status">${Object.entries(STATUS).map(([k,x])=>`<option value="${k}"${k===r.status?' selected':''}>${x}</option>`).join('')}</select></label><label>現像メモ（お店・日付など）<input data-rid="${r.id}" data-k="lab" value="${esc(r.lab||'')}"></label></div>
+  <details><summary>コマの記録（${r.frames.length}）</summary><ol class="frames">${r.frames.map((f,i)=>frow(f,i,r.id)).join('')}</ol></details>
+  <div class="row"><button class="btn" data-act="copyroll" data-id="${r.id}">テキストでコピー</button><button class="btn danger" data-act="delroll" data-id="${r.id}">削除</button></div></article>`).join('')+'</div>':'<p class="muted">まだありません。最初の一本の巻き戻しが待ち遠しいですね。</p>');
+ renderCams();$('#sync').textContent=syncMsg;$('#geo-frames').checked=!!state.settings.geoFrames;}
+function renderCams(){$('#cams').innerHTML=state.cameras.map(c=>`<details class="cam"><summary><b>${esc(c.name)}</b><span class="meta">${fmtT(Math.max(...c.speeds))}〜${fmtT(Math.min(...c.speeds))}・${fmtF(Math.min(...c.fs))}〜${fmtF(Math.max(...c.fs))}</span></summary>
+ <form class="form" data-cam="${c.id}"><label>名前<input name="name" value="${esc(c.name)}"></label><label>シャッター速度<input name="speeds" value="${c.speeds.map(fmtT).join(', ')}"></label><label>絞り<input name="fs" value="${c.fs.join(', ')}"></label><label>焦点距離（mm）<input name="focal" type="number" inputmode="numeric" value="${c.focal}"></label>
+ <div class="row"><button class="btn pri" type="submit">保存</button><button class="btn danger" type="button" data-act="delcam" data-id="${c.id}">削除</button></div></form></details>`).join('');}
+const hv=$('#v-history');
+hv.addEventListener('change',ev=>{const t=ev.target;
+ if(t.id==='geo-frames'){state.settings.geoFrames=t.checked;touchMain();if(t.checked)getPos(0).then(()=>toast('撮影地を記録します')).catch(()=>{toast('位置情報が許可されませんでした');t.checked=false;state.settings.geoFrames=false;touchMain();});return;}
+ if(t.id==='bk-fin'){const f=t.files&&t.files[0];if(f)f.text().then(x=>{$('#bk-in').value=x;toast('読み込みました。「足す」か「置き換える」を押してください');});t.value='';return;}if(t.dataset.rid&&t.dataset.k){const r=state.rolls[t.dataset.rid];if(!r)return;r[t.dataset.k]=t.value;touchRoll(r.id);if(t.dataset.k==='status')renderHistory();}});
+hv.addEventListener('submit',ev=>{ev.preventDefault();const f=ev.target,c=state.cameras.find(x=>x.id===f.dataset.cam);if(!c)return;const E=f.elements;
+ const sp=[...new Set(E.speeds.value.split(/[,、\s]+/).filter(Boolean).map(parseT).filter(x=>x>0))].sort((a,b)=>b-a),fs=[...new Set(E.fs.value.split(/[,、\s]+/).filter(Boolean).map(parseFloat).filter(x=>x>0))].sort((a,b)=>a-b),fl=+E.focal.value;
+ if(sp.length<2||fs.length<2||!(fl>0)){toast('シャッター速度と絞りは2つ以上、焦点距離は数字で');return;}
+ Object.assign(c,{name:E.name.value.trim()||'名前のないカメラ',speeds:sp,fs,focal:fl});touchMain();renderCams();syncMeter();toast('カメラを保存しました');});
+hv.addEventListener('click',ev=>{const b=ev.target.closest('[data-act]');if(!b)return;const A=b.dataset.act,id=b.dataset.id;
+ if(A==='copyroll')copyText(rollText(state.rolls[id]));
+ else if(A==='delroll')arm(b,()=>{state.rolls[id]={id,deleted:true};touchRoll(id);renderHistory();toast('削除しました');},'もう一度押すと削除');
+ else if(A==='addcam'){const c={id:newId(),name:'新しいカメラ',...plain({speeds:DEF_CAMS[2].speeds,fs:DEF_CAMS[2].fs}),focal:50};state.cameras.push(c);touchMain();renderCams();syncMeter();const d=$$('#cams details').pop();if(d)d.open=true;}
+ else if(A==='delcam'){if(state.cameras.length<2){toast('最後の1台は削除できません');return;}arm(b,()=>{state.cameras=state.cameras.filter(c=>c.id!==id);fixFT();touchMain();renderCams();syncMeter();toast('削除しました');},'もう一度押すと削除');}
+ else if(A==='bk-copy')copyText(JSON.stringify({app:'film-note',v:1,state}));
+ else if(A==='bk-file'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'film-note',v:1,state})],{type:'application/json'}));a.download=`film-note-${todayStr()}.json`;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);}
+ else if(A==='bk-merge'){const s=parseBk();if(!s)return;let n=0;for(const [id,r] of Object.entries(s.rolls||{})){const l=state.rolls[id];if(!l||(r.updatedAt||0)>(l.updatedAt||0)){state.rolls[id]=r;if(!r.deleted)n++;}}
+  for(const c of s.cameras||[])if(!state.cameras.some(x=>x.id===c.id))state.cameras.push(c);let act='';if(!state.active&&s.active){state.active=s.active;act='。装填中のフィルムも取り込みました';}
+  touchMain();renderAll();$('#bk-in').value='';toast(`撮り終えたフィルムを${n}本足しました${act}`);}
+ else if(A==='bk-restore'){const s=parseBk();if(!s)return;
+  arm(b,()=>{const f=fresh();state={...f,...s,settings:{...f.settings,...s.settings},exp:{...f.exp,...s.exp},rolls:s.rolls||{}};touchMain();renderAll();$('#bk-in').value='';toast('置き換えました');},'もう一度押すと置き換えます');}});
+function parseBk(){let d;try{d=JSON.parse($('#bk-in').value);}catch(e){toast('読み取れませんでした。ファイルか文字列を確かめてください');return null;}if(!d||d.app!=='film-note'||!d.state){toast('この手帳のバックアップではないようです');return null;}return d.state;}
+
+/* フレームのメモ（記録・履歴共通） */
+document.addEventListener('change',ev=>{const t=ev.target;if(!t.classList.contains('fnote'))return;const rid=t.dataset.rid,r=rid?state.rolls[rid]:state.active,i=+t.dataset.i;
+ if(r&&r.frames[i]){r.frames[i].note=t.value.trim();rid?touchRoll(rid):touchMain();}});
+
+/* ---------- 画面切り替え ---------- */
+const VIEWS=['roll','meter','tools','history'];
+function show(v){if(!VIEWS.includes(v))v='roll';for(const s of $$('.view'))s.hidden=s.id!=='v-'+v;for(const b of $$('.tabs button'))b.setAttribute('aria-current',b.dataset.v===v?'page':'false');
+ if(v==='history')renderHistory();if(v==='tools'){updateSun();renderChecks();}
+ if(v==='meter'){requestAnimationFrame(phDraw);sunHint();if(state.exp.src==='live'&&!LV.stream)lvStart();}else if(LV.stream)lvStop();}
+$('.tabs').addEventListener('click',ev=>{const b=ev.target.closest('button[data-v]');if(!b)return;if(location.hash==='#'+b.dataset.v)show(b.dataset.v);else location.hash=b.dataset.v;window.scrollTo(0,0);});
+addEventListener('hashchange',()=>show(location.hash.slice(1)));
+function renderAll(){renderHeader();renderRoll();syncMeter();initTools();updateDof();updateSun();renderChecks();if(!$('#v-history').hidden)renderHistory();}
+
+renderAll();show(location.hash.slice(1));
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
